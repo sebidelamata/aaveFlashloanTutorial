@@ -12,17 +12,17 @@ require('dotenv').config();
 
 async function main() {
   
-  const FlashLoan = await hre.ethers.getContractFactory("FlashLoan");
+  const Dex = await hre.ethers.getContractFactory("Dex");
   // below is deployes to sepolia network, the address is PoolAddressesProvider in Aave docs
-  const flashLoan = await FlashLoan.deploy('0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A');
-  await flashLoan.waitForDeployment();
-  const contractAddress = await flashLoan.getAddress()
+  const dex = await Dex.deploy();
+  await dex.waitForDeployment();
+  const contractAddress = await dex.getAddress()
 
-  console.log("Flashloan deployed at: ", contractAddress);
+  console.log("Dex deployed at: ", contractAddress);
 
   const envFilePath = '.env';
     const parsedEnv = dotenv.parse(fs.readFileSync(envFilePath));
-    const envVariableName = 'CONTRACT_DEPLOYED_ADDRESS_FLASHLOAN';
+    const envVariableName = 'CONTRACT_DEPLOYED_ADDRESS_DEX';
     if (envVariableName in parsedEnv) {
         delete parsedEnv[envVariableName];
     }

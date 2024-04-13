@@ -9,12 +9,31 @@ import {IPoolAddressesProvider} from "@aave/core-v3/contracts/interfaces/IPoolAd
 import {IERC20} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
 import {SafeMath} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/SafeMath.sol";
 
-contract FlashLoan is FlashLoanSimpleReceiverBase {
+
+//first we need to create an interface to the dex
+  interface IDex {
+    function depositUSDC(uint256 _amount) external;
+    function depositDAI(uint256 _amount) external;
+    function buyDAI() external;
+    function sellDAI() external;
+  }
+
+contract FlashLoanSampleArbitrage is FlashLoanSimpleReceiverBase {
 
     using SafeMath for uint256;
 
     // declare an owner to the contract (me)
     address payable owner;
+
+    // we need to set vars for addresses for dai and usdc and define them as erc20s
+    // also dex stuff
+    address private immutable daiAddress = 0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357;
+    address private immutable usdcAddress = 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8;
+    address private immutable dexContractAddress = 0x3220efEf095af65cF32C81678c8835C9e16dF27d;
+
+    IERC20 private dai;
+    IERC20 private usdc;
+    IDex private dexContract;
 
     // call constructor of flashloansimplerecieverbase
     constructor(address _addressProvider) 
@@ -22,6 +41,9 @@ contract FlashLoan is FlashLoanSimpleReceiverBase {
         {
             // set message sender as owner 
             owner = payable(msg.sender);
+            dai = IERC20(daiAddress);
+            usdc = IERC20(usdcAddress);
+            dexContract = IDex(dexContractAddress);
         }
 
 
@@ -36,6 +58,17 @@ contract FlashLoan is FlashLoanSimpleReceiverBase {
     // we have funds at this point
 
     // add custom logic
+
+    // arbitrage operation
+    // we would do this if dai is cheap on one exchange and expensive on the other
+    // first deposit 1000 usdc
+    dexContract.depositUSDC(1000000000);
+    // buy dai with the usdc
+    dexContract.buyDAI();
+    // deposit dai
+    dexContract.depositDAI(dai.balanceOf(address(this)));
+    // sell dai for usdc
+    dexContract.sellDAI();
 
     // create a variable to hold how much we owe aave
     uint256 amountOwed = amount.add(premium);
@@ -68,7 +101,24 @@ contract FlashLoan is FlashLoanSimpleReceiverBase {
     );
   }
 
+  // we need functions to approve USDC and DAI tokens
+  function approveUSDC(uint256 _amount) external returns(bool){
+    return usdc.approve(dexContractAddress, _amount);
+  }
 
+  function allowanceUSDC() external view returns(uint256){
+    return usdc.allowance(address(this), dexContractAddress);
+  }
+
+  function approveDAI(uint256 _amount) external returns(bool){
+    return dai.approve(dexContractAddress, _amount);
+  }
+
+  function allowanceDAI() external view returns(uint256){
+    return dai.allowance(address(this), dexContractAddress);
+  }
+
+  // utility functions
   function getBalance(address _tokenAddress) external view returns(uint256){
 
     // returns the token balance for this address
