@@ -15,5 +15,5 @@ npx hardhat run --network sepolia scripts/deployFlashLoanSampleArbitrage.js
 
 verify:
 ```shell
-npx hardhat verify --network sepolia <contractAddress/> "PoolAddressesProvider-Aave "
+npx hardhat verify --network sepolia <contractAddress/> "<PoolAddressesProvider-Aave>"
 ```
