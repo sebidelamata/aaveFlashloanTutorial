@@ -1,13 +1,19 @@
-# Sample Hardhat Project
+# Aave Flashloan Arbitrage Tutorial
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This is a template for performing flashloans using Aave for triangular arbitrage
 
 Try running some of the following tasks:
 
 ```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
+npm install
+```
+
+deploy:
+```shell
+npx hardhat run --network sepolia scripts/deployFlashLoanSampleArbitrage.js    
+```
+
+verify:
+```shell
+npx hardhat verify --network sepolia <contractAddress/> "PoolAddressesProvider-Aave "
 ```
