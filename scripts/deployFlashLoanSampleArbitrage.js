@@ -21,18 +21,18 @@ async function main() {
   console.log("Flashloan deployed at: ", contractAddress);
 
   const envFilePath = '.env';
-    const parsedEnv = dotenv.parse(fs.readFileSync(envFilePath));
-    const envVariableName = 'CONTRACT_DEPLOYED_ADDRESS_FLASHLOAN_SAMPLE_ARBITRAGE';
-    if (envVariableName in parsedEnv) {
-        delete parsedEnv[envVariableName];
-    }
-    parsedEnv[envVariableName] = contractAddress;
-    const updatedEnvContent = Object.entries(parsedEnv)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('\n');
-    fs.writeFileSync(envFilePath, updatedEnvContent);
+  const parsedEnv = dotenv.parse(fs.readFileSync(envFilePath));
+  const envVariableName = 'CONTRACT_DEPLOYED_ADDRESS_FLASHLOAN_SAMPLE_ARBITRAGE';
+  if (envVariableName in parsedEnv) {
+      delete parsedEnv[envVariableName];
+  }
+  parsedEnv[envVariableName] = contractAddress;
+  const updatedEnvContent = Object.entries(parsedEnv)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n');
+  fs.writeFileSync(envFilePath, updatedEnvContent);
 
-    console.log('Contract address written to .env file successfully.');
+  console.log('Contract address written to .env file successfully.');
 }
 
 // We recommend this pattern to be able to use async/await everywhere
