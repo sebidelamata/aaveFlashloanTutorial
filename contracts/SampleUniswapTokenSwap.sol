@@ -45,10 +45,11 @@ contract SampleUniswapTokenSwap {
     address public constant routerAddress = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;
     ISwapRouter public immutable swapRouter = ISwapRouter(routerAddress);
 
-    address public constant LINK = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
-    address public constant WETH = 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14;
+    address public constant LINK = 0xf97f4df75117a78c1A5a0DBb814Af92458539FB4;
+    address public constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
     IERC20 public linkToken = IERC20(LINK);
+    IERC20 public wethToken = IERC20(WETH);
 
     uint24 public constant poolFee = 3000;
 
@@ -62,12 +63,12 @@ contract SampleUniswapTokenSwap {
         external
         returns (uint256 amountIn)
     {
-        linkToken.approve(address(swapRouter), amountInMaximum);
+        wethToken.approve(address(swapRouter), amountInMaximum);
 
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
             .ExactOutputSingleParams({
-                tokenIn: LINK,
-                tokenOut: WETH,
+                tokenIn: WETH,
+                tokenOut: LINK,
                 fee: poolFee,
                 recipient: address(this),
                 //deadline: block.timestamp,
@@ -98,8 +99,8 @@ contract SampleUniswapTokenSwap {
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
-                tokenIn: LINK,
-                tokenOut: WETH,
+                tokenIn: WETH,
+                tokenOut: LINK,
                 fee: poolFee,
                 recipient: address(this),
                 //deadline: block.timestamp,

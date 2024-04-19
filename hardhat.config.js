@@ -9,6 +9,12 @@ module.exports = {
       url: process.env.INFURA_SEPOLIA_ENDPOINT,
       accounts: [process.env.DEV_BURNER_ACCOUNT0_PRIVATE_KEY],
     },
+    hardhat: {
+      forking: {
+        url: process.env.INFURA_ARBITRUM_ENDPOINT,
+        blockNumber: 202653649
+      }
+    }
   },
   etherscan: {
     apiKey: {
