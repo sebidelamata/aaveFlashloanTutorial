@@ -7,6 +7,7 @@ const { expect } = require("chai");
 const wethArtifact = require(`../externalABIs/WETH.json`);
 const uniswapV3PoolArtifact = require('../externalABIs/UniswapV3Pool.json')
 const { ethers } = require("hardhat");
+const { BigNumber } = require("ethers");
 
 describe("SampleUniswapTokenSwap", function () {
   it("Should deploy", async function(){
@@ -104,15 +105,37 @@ describe("SampleUniswapTokenSwap", function () {
     );
     const slot0 = await boopWETHPool.slot0()
     const sqrtPriceX96 = slot0.sqrtPriceX96.toString()
-    console.log(sqrtPriceX96.toString())
+    console.log("sqrtPriceX96: " + sqrtPriceX96)
     const boopPrice = ((sqrtPriceX96 / 2**96)**2) / (10**18 / 10**18).toFixed(18);
     console.log(boopPrice)
 
-    // calculate slippage
-
+    // params, calculate slippage
+    const amountIn = ethers.parseEther('1').toString()
+    console.log("amountIn: " + amountIn)
+    // allow 5% slippage
+    const amountOutMin = BigInt(((1 / boopPrice) * 0.95) * 10**18)
+    console.log("amountOutMin: " + amountOutMin)
+    console.log(((BigInt(sqrtPriceX96)*BigInt(105))/BigInt(100)).toString())
     // swap tokens
+    tx = await sampleUniswapTokenSwap.connect(signer[0]).swapExactInputSingle(
+      amountIn.toString(),
+      amountOutMin.toString(),
+      ((BigInt(sqrtPriceX96)*BigInt(105))/BigInt(100)).toString()
+    )
+    await tx.wait()
+    
+    // find contract balance of Boop
+    const boopABI = wethArtifact.abi
+    const boopAddress = '0x13A7DeDb7169a17bE92B0E3C7C2315B46f4772B3'
+    boopContract = new ethers.Contract(
+      boopAddress,
+      boopABI,
+      signer[0]
+    )
+    let boopBalance = await boopContract.balanceOf(contractAddress)
+    console.log('Swap Contract Boop Balance: ', boopBalance.toString())
 
 
-    expect(contractBalance).not.equals(0)
+    expect(boopBalance).not.equals(0)
   })
 })

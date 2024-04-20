@@ -11,7 +11,7 @@ interface ISwapRouter {
         address tokenOut;
         uint24 fee;
         address recipient;
-        //uint256 deadline;
+        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
         uint160 sqrtPriceLimitX96;
@@ -22,7 +22,7 @@ interface ISwapRouter {
         address tokenOut;
         uint24 fee;
         address recipient;
-        //uint256 deadline;
+        uint256 deadline;
         uint256 amountOut;
         uint256 amountInMaximum;
         uint160 sqrtPriceLimitX96;
@@ -42,16 +42,16 @@ interface IERC20 {
 }
 
 contract SampleUniswapTokenSwap {
-    address public constant routerAddress = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;
+    address public constant routerAddress = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
     ISwapRouter public immutable swapRouter = ISwapRouter(routerAddress);
 
-    address public constant LINK = 0xf97f4df75117a78c1A5a0DBb814Af92458539FB4;
+    address public constant BOOP = 0x13A7DeDb7169a17bE92B0E3C7C2315B46f4772B3;
     address public constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
-    IERC20 public linkToken = IERC20(LINK);
+    IERC20 public boopToken = IERC20(BOOP);
     IERC20 public wethToken = IERC20(WETH);
 
-    uint24 public constant poolFee = 3000;
+    uint24 public constant poolFee = 10000;
 
     constructor() {}
 
@@ -68,10 +68,10 @@ contract SampleUniswapTokenSwap {
         ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
             .ExactOutputSingleParams({
                 tokenIn: WETH,
-                tokenOut: LINK,
+                tokenOut: BOOP,
                 fee: poolFee,
                 recipient: address(this),
-                //deadline: block.timestamp,
+                deadline: block.timestamp,
                 amountOut: amountOut,
                 // this needs to be set to avoid slippage
                 amountInMaximum: amountInMaximum,
@@ -82,8 +82,8 @@ contract SampleUniswapTokenSwap {
         amountIn = swapRouter.exactOutputSingle(params);
 
         if (amountIn < amountInMaximum) {
-            linkToken.approve(address(swapRouter), 0);
-            linkToken.transfer(address(this), amountInMaximum - amountIn);
+            boopToken.approve(address(swapRouter), 0);
+            boopToken.transfer(address(this), amountInMaximum - amountIn);
         }
     }
 
@@ -95,15 +95,15 @@ contract SampleUniswapTokenSwap {
         external
         returns (uint256 amountOut)
     {
-        linkToken.approve(address(swapRouter), amountIn);
+        wethToken.approve(address(swapRouter), amountIn);
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: WETH,
-                tokenOut: LINK,
+                tokenOut: BOOP,
                 fee: poolFee,
                 recipient: address(this),
-                //deadline: block.timestamp,
+                deadline: block.timestamp,
                 amountIn: amountIn,
                 // this needs to be set to avoid slippage
                 amountOutMinimum: amountOutMinimum,
