@@ -87,6 +87,10 @@ interface ICamelotRouter is IUniswapV2Router01 {
     address referrer,
     uint deadline
   ) external;
+  function getAmountsOut(
+    uint amountIn, 
+    address[] calldata path
+    ) external view returns (uint[] memory amounts);
 }
 
 interface IERC20 {

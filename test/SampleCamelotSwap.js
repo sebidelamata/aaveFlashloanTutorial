@@ -6,6 +6,7 @@ const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const wethArtifact = require(`../externalABIs/WETH.json`);
 const uniswapV3PoolArtifact = require('../externalABIs/UniswapV3Pool.json')
+const camelotSwapRouterArtifact = require('../externalABIs/CamelotSwapRouter.json')
 const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
 
@@ -20,27 +21,31 @@ describe("SampleCamelotSwap", function () {
     console.log(contractAddress)
     expect(contractAddress).not.equals(null)
   })
-  // it("Should be able to get BOOP price in ETH", async function(){
-  //   // Contracts are deployed using the first signer/account by default
-  //   const owner = await ethers.getSigners();
+  it("Should be able to get BOOP price in ETH", async function(){
+    // Contracts are deployed using the first signer/account by default
+    const owner = await ethers.getSigners();
 
-  //   const boopWETHPoolAddress = '0xe24F62341D84D11078188d83cA3be118193D6389'
-  //   const uniswapV3PoolABI = uniswapV3PoolArtifact.abi
-  //   const boopWETHPool = new ethers.Contract(
-  //     boopWETHPoolAddress, 
-  //     uniswapV3PoolABI, 
-  //     owner[0]
-  //   );
+    // connect to router
+    const routerAddress = '0xc873fEcbd354f5A56E00E710B90EF4201db2448d'
+    const camelotABI = camelotSwapRouterArtifact.abi
+    const camelotSwapRouterContract = new ethers.Contract(
+      routerAddress, 
+      camelotABI, 
+      owner[0]
+    );
 
-  //   // get slot0
-  //   const slot0 = await boopWETHPool.slot0()
-  //   const sqrtPriceX96 = slot0.sqrtPriceX96.toString()
-  //   console.log(sqrtPriceX96.toString())
-  //   const boopPrice = ((sqrtPriceX96 / 2**96)**2) / (10**18 / 10**18).toFixed(18);
-  //   console.log(boopPrice)
+    // get amount out
+    const amountOut = await camelotSwapRouterContract.getAmountsOut(
+      '1000000000000000000',
+      [
+        '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+        '0x13A7DeDb7169a17bE92B0E3C7C2315B46f4772B3'
+      ]
+    )
+    console.log(amountOut)
 
-  //   expect(boopPrice).not.equals(null)
-  // })
+    expect(amountOut[1].toString()).not.equals(null)
+  })
   // it("Should be able to swap WETH to BOOP", async function(){
   //   // Contracts are deployed using the first signer/account by default
   //   const signer = await ethers.getSigners();
