@@ -138,7 +138,7 @@ interface ICamelotRouter is IUniswapV2Router01 {
     ) external view returns (uint[] memory amounts);
 }
 
-contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
+contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
 
     using SafeMath for uint256;
 
@@ -245,9 +245,6 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
 
     // approve boop on camelot
     BOOP.approve(camelotRouterAddress, boopAmount);
-    // grab time based constants for boop
-    uint256 blocktime = uint(block.timestamp);
-    uint deadline = uint(blocktime);
     // Get the router instance
     ICamelotRouter camelotRouter = ICamelotRouter(camelotRouterAddress);
     // Perform the token swap
@@ -257,7 +254,7 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
         path,
         to,
         referrer,
-        deadline
+        uint(block.timestamp)
     );
 
 
