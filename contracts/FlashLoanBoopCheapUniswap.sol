@@ -147,8 +147,8 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
 
     // we need to set vars for addresses for dai and usdc and define them as erc20s
     // also dex stuff
-    address private immutable wethAddress = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
-    address private immutable boopAddress = 0x13A7DeDb7169a17bE92B0E3C7C2315B46f4772B3;
+    address private constant wethAddress = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+    address private constant boopAddress = 0x13A7DeDb7169a17bE92B0E3C7C2315B46f4772B3;
     IERC20 public WETH = IERC20(wethAddress);
     IERC20 public BOOP = IERC20(boopAddress);
 
@@ -161,8 +161,8 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     address public constant camelotRouterAddress = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d;
     ICamelotRouter public immutable swapRouter = ICamelotRouter(camelotRouterAddress);
     address[] path = [
-            BOOP,
-            WETH
+            boopAddress,
+            wethAddress
         ];
     address public to = address(this);
     address public referrer = address(0x0000000000000000000000000000000000000000);
@@ -206,19 +206,13 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     // These are our params the user passed in, we need to decode so we can use them
     // in our flashloan logic
     (
-      uint160 _uniswapPriceLimit, 
-      address _camelotRouterAddress, 
-      uint160 _camelotPriceLimit,
       uint256 _amountInUniswap, 
       uint256 _amountOutMinimumUniswap,
       uint160 _sqrtPriceLimitX96Uniswap,
-      uint256 _amountOutMinimumCamelot,
+      uint256 _amountOutMinimumCamelot
     ) = abi.decode(
       params, 
       (
-        uint160, 
-        address, 
-        uint160,
         uint256, 
         uint256,
         uint160,
@@ -232,8 +226,8 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     //create swap params on uniswap
     ISwapRouter.ExactInputSingleParams memory uniswapParams = ISwapRouter
         .ExactInputSingleParams({
-            tokenIn: WETH,
-            tokenOut: BOOP,
+            tokenIn: wethAddress,
+            tokenOut: boopAddress,
             fee: uniswapPoolFee,
             recipient: address(this),
             //deadline: block.timestamp,
@@ -247,7 +241,7 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     uniswapSwapRouter.exactInputSingle(uniswapParams);
 
     // Deposit BOOP on Camelot and sell for WETH
-    uint160 boopAmount = BOOP.balanceOf(address(this));
+    uint256 boopAmount = BOOP.balanceOf(address(this));
 
     // approve boop on camelot
     BOOP.approve(camelotRouterAddress, boopAmount);
@@ -257,7 +251,7 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     // Get the router instance
     ICamelotRouter camelotRouter = ICamelotRouter(camelotRouterAddress);
     // Perform the token swap
-    swapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+    camelotRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
         boopAmount,
         _amountOutMinimumCamelot,
         path,
@@ -281,14 +275,12 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
 
   // create function to actually call the loan (starts the actual process)
   function requestFlashLoan(
-    uint160 _uniswapPriceLimit,
-    address _camelotRouterAddress,
-    uint160 _camelotPriceLimit,
     address _token, 
     uint256 _amount,
     uint256 _amountInUniswap, 
     uint256 _amountOutMinimumUniswap,
-    uint160 _sqrtPriceLimitX96Uniswap
+    uint160 _sqrtPriceLimitX96Uniswap,
+    uint256 _amountOutMinimumCamelot
     ) public {
     // declares that this address will recieve the loan
     address receiverAddress = address(this);
@@ -298,12 +290,10 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     uint256 amount = _amount;
     // these are the params for price etc that will be passed to the flashloan
     bytes memory paramsInput = abi.encode(
-      _uniswapPriceLimit, 
-      _camelotRouterAddress, 
-      _camelotPriceLimit,
       _amountInUniswap, 
       _amountOutMinimumUniswap,
-      _sqrtPriceLimitX96Uniswap
+      _sqrtPriceLimitX96Uniswap,
+      _amountOutMinimumCamelot
       );
     uint16 referralCode = 0;
     //call function with variables defined above
@@ -314,23 +304,6 @@ contract FlashLoanSampleBoopCheapUniswap is FlashLoanSimpleReceiverBase {
         paramsInput,
         referralCode
     );
-  }
-
-  // we need functions to approve USDC and DAI tokens
-  function approveUSDC(uint256 _amount) external returns(bool){
-    return usdc.approve(dexContractAddress, _amount);
-  }
-
-  function allowanceUSDC() external view returns(uint256){
-    return usdc.allowance(address(this), dexContractAddress);
-  }
-
-  function approveDAI(uint256 _amount) external returns(bool){
-    return dai.approve(dexContractAddress, _amount);
-  }
-
-  function allowanceDAI() external view returns(uint256){
-    return dai.allowance(address(this), dexContractAddress);
   }
 
   // utility functions
