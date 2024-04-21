@@ -10,13 +10,17 @@ import {FlashLoanSimpleReceiverBase} from "@aave/core-v3/contracts/flashloan/bas
 import {IPoolAddressesProvider} from "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 //erc20
 interface IERC20 {
-    function balanceOf(address account) external view returns (uint256);
+    function balanceOf(address account) 
+      external view 
+      returns (uint256);
 
     function transfer(address recipient, uint256 amount)
-        external
-        returns (bool);
+      external
+      returns (bool);
 
-    function approve(address spender, uint256 amount) external returns (bool);
+    function approve(address spender, uint256 amount) 
+      external 
+      returns (bool);
 }
 // safemath
 import {SafeMath} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/SafeMath.sol";
@@ -27,7 +31,7 @@ interface ISwapRouter {
         address tokenOut;
         uint24 fee;
         address recipient;
-        //uint256 deadline;
+        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
         uint160 sqrtPriceLimitX96;
@@ -38,15 +42,19 @@ interface ISwapRouter {
         address tokenOut;
         uint24 fee;
         address recipient;
-        //uint256 deadline;
+        uint256 deadline;
         uint256 amountOut;
         uint256 amountInMaximum;
         uint160 sqrtPriceLimitX96;
     }
 
-    function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
+    function exactInputSingle(ExactInputSingleParams calldata params) 
+      external payable 
+      returns (uint256 amountOut);
 
-    function exactOutputSingle(ExactOutputSingleParams calldata params) external payable returns (uint256 amountIn);
+    function exactOutputSingle(ExactOutputSingleParams calldata params) 
+      external payable 
+      returns (uint256 amountIn);
 }
 
 // camelot
@@ -153,8 +161,8 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     IERC20 public BOOP = IERC20(boopAddress);
 
     // define Uniswap constants
-    address public constant routerAddress = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;
-    ISwapRouter public immutable uniswapSwapRouter = ISwapRouter(routerAddress);
+    address public constant uniswapRouterAddress = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    ISwapRouter public immutable uniswapSwapRouter = ISwapRouter(uniswapRouterAddress);
     uint24 public constant uniswapPoolFee = 10000;
 
     //mdefine camelot constants
@@ -206,14 +214,12 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     // These are our params the user passed in, we need to decode so we can use them
     // in our flashloan logic
     (
-      uint256 _amountInUniswap, 
       uint256 _amountOutMinimumUniswap,
       uint160 _sqrtPriceLimitX96Uniswap,
       uint256 _amountOutMinimumCamelot
     ) = abi.decode(
       params, 
       (
-        uint256, 
         uint256,
         uint160,
         uint256
@@ -222,7 +228,7 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
 
     // Deposit WETH on UNISWAP buy BOOP on UNISWAP
     // approve weth
-    WETH.approve(address(uniswapSwapRouter), _amountInUniswap);
+    WETH.approve(address(uniswapSwapRouter), amount);
     //create swap params on uniswap
     ISwapRouter.ExactInputSingleParams memory uniswapParams = ISwapRouter
         .ExactInputSingleParams({
@@ -230,15 +236,15 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
             tokenOut: boopAddress,
             fee: uniswapPoolFee,
             recipient: address(this),
-            //deadline: block.timestamp,
-            amountIn: _amountInUniswap,
+            deadline: block.timestamp,
+            amountIn: amount,
             // this needs to be set to avoid slippage
             amountOutMinimum: _amountOutMinimumUniswap,
             // this needs to be our limit price
             sqrtPriceLimitX96: _sqrtPriceLimitX96Uniswap
         });
     // execute swap weth for boop on uniswap
-    uniswapSwapRouter.exactInputSingle(uniswapParams);
+    uint256 amountOut = uniswapSwapRouter.exactInputSingle(uniswapParams);
 
     // Deposit BOOP on Camelot and sell for WETH
     uint256 boopAmount = BOOP.balanceOf(address(this));
@@ -273,8 +279,7 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
   // create function to actually call the loan (starts the actual process)
   function requestFlashLoan(
     address _token, 
-    uint256 _amount,
-    uint256 _amountInUniswap, 
+    uint256 _amount, 
     uint256 _amountOutMinimumUniswap,
     uint160 _sqrtPriceLimitX96Uniswap,
     uint256 _amountOutMinimumCamelot
@@ -286,8 +291,7 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     // inherit amount from args
     uint256 amount = _amount;
     // these are the params for price etc that will be passed to the flashloan
-    bytes memory paramsInput = abi.encode(
-      _amountInUniswap, 
+    bytes memory paramsInput = abi.encode( 
       _amountOutMinimumUniswap,
       _sqrtPriceLimitX96Uniswap,
       _amountOutMinimumCamelot

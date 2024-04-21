@@ -12,8 +12,6 @@ const { BigNumber } = require("ethers");
 
 describe("FlashLoanBoopCheapUniswap", function () {
   it("Should deploy", async function(){
-    owner = await ethers.getSigners();
-
     const FlashLoanBoopCheapUniswap = await ethers.getContractFactory("FlashLoanBoopCheapUniswap");
     const flashLoanBoopCheapUniswap = await FlashLoanBoopCheapUniswap.deploy('0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb');
     await flashLoanBoopCheapUniswap.waitForDeployment();
@@ -21,7 +19,7 @@ describe("FlashLoanBoopCheapUniswap", function () {
     console.log(contractAddress)
     expect(contractAddress).not.equals(null)
   })
-  it("Shoulf be able to get BOOP price in ETH", async function(){
+  it("Should be able to get BOOP price in ETH", async function(){
     // Contracts are deployed using the first signer/account by default
     const owner = await ethers.getSigners();
 
@@ -68,11 +66,14 @@ describe("FlashLoanBoopCheapUniswap", function () {
     expect(amountOut[1].toString()).not.equals(null)
   })
   it("Should be able to perform BOOP cheap uniswap arbitrage operation", async function(){
-    // set up weth get starting balance of signer
+    // at this point in the forked arbitrum blockchain, BOOP
+    // is actually cheaper on Camelot.
+    // In order to create conditions for the arbitrage to execute,
+    // let's create a large buy order for BOOP on camelot
     const signer = await ethers.getSigners();
     const wethABI = wethArtifact.abi
     const wethAddress = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
-    wethContract = new ethers.Contract(
+    const wethContract = new ethers.Contract(
       wethAddress,
       wethABI,
       signer[0]
@@ -81,8 +82,79 @@ describe("FlashLoanBoopCheapUniswap", function () {
     let wethBalance = await wethContract.balanceOf(signer[0])
     console.log("Signer WETH balance: " + wethBalance)
     // deposit 1 eth
+    const camelotInput = ethers.parseEther('1000')
+    let tx = await wethContract.connect(signer[0]).deposit({ value: camelotInput })
+    await tx.wait()
+
+    // grab balance of WETH
+    wethBalance = await wethContract.balanceOf(signer[0])
+    console.log("Signer WETH Balance: " + wethBalance)
+    
+    // deploy camelot swap contract
+    const SampleCamelotSwap = await ethers.getContractFactory("SampleCamelotSwap");
+    const sampleCamelotSwap = await SampleCamelotSwap.deploy();
+    await sampleCamelotSwap.waitForDeployment();
+    const camelotAddress = await sampleCamelotSwap.getAddress()
+    console.log("Swap Contract address: " + camelotAddress)
+
+    // send WETH to camelot swap contract
+    let camelotSendAmount = ethers.parseEther('1000')
+    tx = await wethContract.connect(signer[0]).transfer(camelotAddress, camelotSendAmount)
+    await tx.wait()
+
+    // check contract WETH balance
+    let camelotContractBalance = await wethContract.balanceOf(camelotAddress)
+    console.log('Swap Contract WETH Balance: ', camelotContractBalance.toString())
+
+    // params, calculate slippage
+    const amountIn = ethers.parseEther('1000').toString()
+    console.log("Camelot initial BOOP Buy WETH amountIn: " + amountIn)
+    // connect to router
+    const camelotRouterAddress = '0xc873fEcbd354f5A56E00E710B90EF4201db2448d'
+    const camelotABI = camelotSwapRouterArtifact.abi
+    const camelotSwapRouterContract = new ethers.Contract(
+      camelotRouterAddress, 
+      camelotABI, 
+      signer[0]
+    );
+
+    // get amount out
+    let amountOutMin = await camelotSwapRouterContract.getAmountsOut(
+      amountIn,
+      [
+        '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+        '0x13A7DeDb7169a17bE92B0E3C7C2315B46f4772B3'
+      ]
+    )
+    amountOutMin = (amountOutMin[1] * BigInt(95)) / BigInt(100)
+    amountOutMin = amountOutMin.toString()
+    console.log("Camelot inital BOOP Buy amountOutMin: " + amountOutMin)
+    // swap tokens
+    tx = await sampleCamelotSwap.connect(signer[0]).swapExactInputSingle(
+      amountIn,
+      amountOutMin
+    )
+    await tx.wait()
+    
+    // find contract balance of Boop
+    const boopABI = wethArtifact.abi
+    const boopAddress = '0x13A7DeDb7169a17bE92B0E3C7C2315B46f4772B3'
+    boopContract = new ethers.Contract(
+      boopAddress,
+      boopABI,
+      signer[0]
+    )
+    let boopBalance = await boopContract.balanceOf(camelotAddress)
+    console.log('Swap Contract Boop Balance: ', boopBalance.toString())
+    // end of inital BOOP buy
+
+    // start actual arbitrage test
+    // set up weth get starting balance of signer
+    wethBalance = await wethContract.balanceOf(signer[0])
+    console.log("Signer WETH balance: " + wethBalance)
+    // deposit 1 eth
     const input = ethers.parseEther('1')
-    let tx = await wethContract.connect(signer[0]).deposit({ value: input })
+    tx = await wethContract.connect(signer[0]).deposit({ value: input })
     await tx.wait()
 
     // deploy arbitrage contract
@@ -90,7 +162,6 @@ describe("FlashLoanBoopCheapUniswap", function () {
     const flashLoanBoopCheapUniswap = await FlashLoanBoopCheapUniswap.deploy('0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb');
     await flashLoanBoopCheapUniswap.waitForDeployment();
     const contractAddress = await flashLoanBoopCheapUniswap.getAddress()
-    console.log(contractAddress)
     console.log("Boop Cheap Uniswap Arbitrage Contract address: " + contractAddress)
 
     // get uniswap inputs
@@ -110,7 +181,7 @@ describe("FlashLoanBoopCheapUniswap", function () {
     const boopWETHPool = new ethers.Contract(
       boopWETHPoolAddress, 
       uniswapV3PoolABI, 
-      owner[0]
+      signer[0]
     );
     const slot0 = await boopWETHPool.slot0()
     const sqrtPriceX96 = slot0.sqrtPriceX96.toString()
@@ -124,20 +195,14 @@ describe("FlashLoanBoopCheapUniswap", function () {
     const uniswapAmountOutMin = BigInt(((1 / uniswapBoopPrice) * 0.95) * 10**18)
     console.log("Uniswap BOOP amountOutMin: " + uniswapAmountOutMin)
 
+
+
     // get camelot constants
 
     // params, calculate slippage
     const camelotAmountIn = uniswapAmountOutMin
     console.log("Camelot min amountIn: " + camelotAmountIn)
     // allow 5% slippage
-    // connect to router
-    const routerAddress = '0xc873fEcbd354f5A56E00E710B90EF4201db2448d'
-    const camelotABI = camelotSwapRouterArtifact.abi
-    const camelotSwapRouterContract = new ethers.Contract(
-      routerAddress, 
-      camelotABI, 
-      owner[0]
-    );
     // get amount out
     let camelotAmountOutMin = await camelotSwapRouterContract.getAmountsOut(
       camelotAmountIn,
@@ -149,8 +214,22 @@ describe("FlashLoanBoopCheapUniswap", function () {
     camelotAmountOutMin = (camelotAmountOutMin[1] * BigInt(95)) / BigInt(100)
     camelotAmountOutMin = camelotAmountOutMin.toString()
     console.log("Camelot WETH amountOutMin: " + camelotAmountOutMin)
+    const camelotBoopPrice = camelotAmountOutMin.toString() / camelotAmountIn.toString()
+    console.log("Boop effective price Camelot: " + camelotBoopPrice)
 
     // perform arbitrage operation
-    
+    tx = await flashLoanBoopCheapUniswap.requestFlashLoan(
+      '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 
+      uniswapAmountIn.toString(), 
+      uniswapAmountOutMin.toString(),
+      ((BigInt(sqrtPriceX96)*BigInt(105))/BigInt(100)).toString(),
+      camelotAmountOutMin.toString()
+    )
+
+    await tx.wait()
+    console.log(tx)
+    contractBalance = await wethContract.balanceOf(contractAddress)
+    contractBalance = contractBalance / BigInt(10**18)
+    console.log('Swap Contract WETH Balance After Arbitrage: ', contractBalance.toString())
   })
 })
