@@ -11,6 +11,7 @@ const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
 
 describe("FlashLoanBoopCheapUniswap", function () {
+  
   it("Should deploy", async function(){
     const FlashLoanBoopCheapUniswap = await ethers.getContractFactory("FlashLoanBoopCheapUniswap");
     const flashLoanBoopCheapUniswap = await FlashLoanBoopCheapUniswap.deploy('0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb');
@@ -19,7 +20,7 @@ describe("FlashLoanBoopCheapUniswap", function () {
     console.log(contractAddress)
     expect(contractAddress).not.equals(null)
   })
-  it("Should be able to get BOOP price in ETH", async function(){
+  it("Should be able to get BOOP price in ETH Uniswap", async function(){
     // Contracts are deployed using the first signer/account by default
     const owner = await ethers.getSigners();
 
@@ -40,7 +41,7 @@ describe("FlashLoanBoopCheapUniswap", function () {
 
     expect(boopPrice).not.equals(null)
   })
-  it("Should be able to get BOOP price in ETH", async function(){
+  it("Should be able to get BOOP price in ETH Camelot", async function(){
     // Contracts are deployed using the first signer/account by default
     const owner = await ethers.getSigners();
 
@@ -80,9 +81,10 @@ describe("FlashLoanBoopCheapUniswap", function () {
     )
 
     let wethBalance = await wethContract.balanceOf(signer[0])
+    let wethBalanceOriginal = wethBalance
     console.log("Signer WETH balance: " + wethBalance)
     // deposit 1 eth
-    const camelotInput = ethers.parseEther('1000')
+    const camelotInput = ethers.parseEther('100')
     let tx = await wethContract.connect(signer[0]).deposit({ value: camelotInput })
     await tx.wait()
 
@@ -98,7 +100,7 @@ describe("FlashLoanBoopCheapUniswap", function () {
     console.log("Swap Contract address: " + camelotAddress)
 
     // send WETH to camelot swap contract
-    let camelotSendAmount = ethers.parseEther('1000')
+    let camelotSendAmount = ethers.parseEther('100')
     tx = await wethContract.connect(signer[0]).transfer(camelotAddress, camelotSendAmount)
     await tx.wait()
 
@@ -107,7 +109,7 @@ describe("FlashLoanBoopCheapUniswap", function () {
     console.log('Swap Contract WETH Balance: ', camelotContractBalance.toString())
 
     // params, calculate slippage
-    const amountIn = ethers.parseEther('1000').toString()
+    const amountIn = ethers.parseEther('100').toString()
     console.log("Camelot initial BOOP Buy WETH amountIn: " + amountIn)
     // connect to router
     const camelotRouterAddress = '0xc873fEcbd354f5A56E00E710B90EF4201db2448d'
@@ -167,7 +169,7 @@ describe("FlashLoanBoopCheapUniswap", function () {
     // get uniswap inputs
 
     // send WETH to uniswap contract
-    let sendAmount = ethers.parseEther('1')
+    let sendAmount = ethers.parseEther('0.0001')
     tx = await wethContract.connect(signer[0]).transfer(contractAddress, sendAmount)
     await tx.wait()
 
@@ -184,9 +186,10 @@ describe("FlashLoanBoopCheapUniswap", function () {
       signer[0]
     );
     const slot0 = await boopWETHPool.slot0()
+    // price of boop in eth
     const sqrtPriceX96 = slot0.sqrtPriceX96.toString()
     console.log("sqrtPriceX96: " + sqrtPriceX96)
-    const uniswapBoopPrice = ((sqrtPriceX96 / 2**96)**2) / (10**18 / 10**18).toFixed(18);
+    const uniswapBoopPrice = (sqrtPriceX96 ** 2) / (2 ** 192);
     console.log("Uniswap Boop Price: " + uniswapBoopPrice)
     // params, calculate slippage
     const uniswapAmountIn = ethers.parseEther('1').toString()
@@ -231,5 +234,6 @@ describe("FlashLoanBoopCheapUniswap", function () {
     contractBalance = await wethContract.balanceOf(contractAddress)
     contractBalance = contractBalance / BigInt(10**18)
     console.log('Swap Contract WETH Balance After Arbitrage: ', contractBalance.toString())
+    expect(contractBalance).to.be.greaterThan(wethBalanceOriginal)
   })
 })

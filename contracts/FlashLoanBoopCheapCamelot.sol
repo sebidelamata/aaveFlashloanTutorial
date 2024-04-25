@@ -140,13 +140,14 @@ interface ICamelotRouter is IUniswapV2Router01 {
     address referrer,
     uint deadline
   ) external;
+  
   function getAmountsOut(
     uint amountIn, 
     address[] calldata path
     ) external view returns (uint[] memory amounts);
 }
 
-contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
+contract FlashLoanBoopCheapCamelot is FlashLoanSimpleReceiverBase {
 
     using SafeMath for uint256;
 
@@ -165,7 +166,7 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     ISwapRouter public immutable uniswapSwapRouter = ISwapRouter(uniswapRouterAddress);
     uint24 public constant uniswapPoolFee = 10000;
 
-    //mdefine camelot constants
+    //define camelot constants
     address public constant camelotRouterAddress = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d;
     ICamelotRouter public immutable swapRouter = ICamelotRouter(camelotRouterAddress);
     address[] path = [
@@ -187,6 +188,9 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
             owner = payable(msg.sender);
         }
 
+    // Event to log balances
+    event Balances(uint256 wethBalance, uint256 boopBalance);
+
 
     function executeOperation(
     address asset,
@@ -195,6 +199,7 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     address initiator,
     bytes calldata params
   ) external override returns (bool){
+
 
     // we have funds at this point
 
@@ -214,22 +219,24 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     // These are our params the user passed in, we need to decode so we can use them
     // in our flashloan logic
     (
-      uint256 _amountOutMinimumCamelot,
       uint256 _amountOutMinimumUniswap,
-      uint160 _sqrtPriceLimitX96Uniswap
+      uint160 _sqrtPriceLimitX96Uniswap,
+      uint256 _amountOutMinimumCamelot
     ) = abi.decode(
       params, 
       (
         uint256,
-        uint256,
-        uint160
+        uint160,
+        uint256
       )
     );
 
-    // Deposit WETH on UNISWAP buy BOOP on Camelot
+    // Deposit WETH buy BOOP on Camelot
     // approve weth
+    emit Balances(WETH.balanceOf(address(this)), BOOP.balanceOf(address(this)));
     WETH.approve(address(camelotRouterAddress), amount);
-
+    require(amount > 0, "Amount must be greater than zero for WETH on Camelot");
+    require(amount <= WETH.balanceOf(address(this)), "Insufficient WETH balance for Camelot swap");
     // Get the router instance
     ICamelotRouter camelotRouter = ICamelotRouter(camelotRouterAddress);
     // Perform the token swap
@@ -244,9 +251,11 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
 
     // Deposit BOOP on Camelot and sell for WETH
     uint256 boopAmount = BOOP.balanceOf(address(this));
-
+    emit Balances(WETH.balanceOf(address(this)), BOOP.balanceOf(address(this)));
     // approve boop on camelot
     BOOP.approve(uniswapRouterAddress, boopAmount);
+    require(boopAmount > 0, "BOOP amount must be greater than zero for uniswap swap");
+    require(boopAmount <= BOOP.balanceOf(address(this)), "Insufficient BOOP balance for swap");
     //create swap params on uniswap
     ISwapRouter.ExactInputSingleParams memory uniswapParams = ISwapRouter
         .ExactInputSingleParams({
@@ -261,6 +270,10 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
             // this needs to be our limit price
             sqrtPriceLimitX96: _sqrtPriceLimitX96Uniswap
         });
+
+    // Ensure that the contract has enough WETH balance to cover the transfer
+    require(_amountOutMinimumUniswap <= WETH.balanceOf(address(this)), "Insufficient WETH balance for Uniswap swap");
+    emit Balances(WETH.balanceOf(address(this)), BOOP.balanceOf(address(this)));
     // execute swap weth for boop on uniswap
     uint256 amountOut = uniswapSwapRouter.exactInputSingle(uniswapParams);
 
@@ -285,6 +298,7 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     uint160 _sqrtPriceLimitX96Uniswap,
     uint256 _amountOutMinimumCamelot
     ) public {
+      emit Balances(WETH.balanceOf(address(this)), BOOP.balanceOf(address(this)));
     // declares that this address will recieve the loan
     address receiverAddress = address(this);
     // this is the address of the token

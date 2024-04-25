@@ -12,8 +12,10 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.INFURA_ARBITRUM_ENDPOINT,
-        blockNumber: 202653649
-      }
+        blockNumber: 202653649,
+        enabled: true,
+      },
+      chainId: 42161, // Arbitrum One chain ID
     }
   },
   etherscan: {

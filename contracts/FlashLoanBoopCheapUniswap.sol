@@ -165,7 +165,7 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     ISwapRouter public immutable uniswapSwapRouter = ISwapRouter(uniswapRouterAddress);
     uint24 public constant uniswapPoolFee = 10000;
 
-    //mdefine camelot constants
+    //define camelot constants
     address public constant camelotRouterAddress = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d;
     ICamelotRouter public immutable swapRouter = ICamelotRouter(camelotRouterAddress);
     address[] path = [

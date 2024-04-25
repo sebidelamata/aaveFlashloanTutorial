@@ -119,7 +119,7 @@ describe("SampleUniswapTokenSwap", function () {
     // swap tokens
     tx = await sampleUniswapTokenSwap.connect(signer[0]).swapExactInputSingle(
       amountIn.toString(),
-      amountOutMin.toString(),
+      0,
       ((BigInt(sqrtPriceX96)*BigInt(105))/BigInt(100)).toString()
     )
     await tx.wait()
