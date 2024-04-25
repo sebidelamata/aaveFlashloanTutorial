@@ -148,6 +148,10 @@ interface ICamelotRouter is IUniswapV2Router01 {
 
 contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
 
+    // Event to log balances
+    // to keep track of our performance and build a dashboard later...
+    event ArbitrageExecuted(uint256 blockTime, uint256 profit);
+
     using SafeMath for uint256;
 
     // declare an owner to the contract (me)
@@ -175,6 +179,11 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     address public to = address(this);
     address public referrer = address(0x0000000000000000000000000000000000000000);
     uint public constant poolFee = 300;
+
+    // starting balance to keep track of profits
+    uint256 public startingBalance;
+    // for storing our endingBalance
+    uint256 public endingBalance;
 
     // call constructor of flashloansimplerecieverbase
     constructor(
@@ -269,6 +278,10 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     // create a variable to hold how much we owe aave
     uint256 amountOwed = amount.add(premium);
 
+    // calculate profit
+    endingBalance = IERC20(asset).balanceOf(address(this)) - amountOwed;
+    emit ArbitrageExecuted(block.timestamp, endingBalance - startingBalance);
+
     // get approval to use the token we want to borrow
     IERC20(asset).approve(address(POOL), amountOwed);
 
@@ -284,6 +297,10 @@ contract FlashLoanBoopCheapUniswap is FlashLoanSimpleReceiverBase {
     uint160 _sqrtPriceLimitX96Uniswap,
     uint256 _amountOutMinimumCamelot
     ) public {
+
+    // grab starting balance
+    startingBalance = IERC20(_token).balanceOf(address(this));
+
     // declares that this address will recieve the loan
     address receiverAddress = address(this);
     // this is the address of the token

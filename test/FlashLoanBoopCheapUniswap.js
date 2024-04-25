@@ -166,6 +166,11 @@ describe("FlashLoanBoopCheapUniswap", function () {
     const contractAddress = await flashLoanBoopCheapUniswap.getAddress()
     console.log("Boop Cheap Uniswap Arbitrage Contract address: " + contractAddress)
 
+    // Set up event listener
+    flashLoanBoopCheapUniswap.on("ArbitrageExecuted", (blockTime, profit) => {
+      console.log("ArbitrageExecuted event emitted:", blockTime, profit);
+    });
+
     // get uniswap inputs
 
     // send WETH to uniswap contract

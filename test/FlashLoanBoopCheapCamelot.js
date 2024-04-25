@@ -174,12 +174,11 @@ describe("FlashLoanBoopCheapCamelot", function () {
     await flashLoanBoopCheapCamelot.waitForDeployment();
     const camelotContractAddress = await flashLoanBoopCheapCamelot.getAddress()
     console.log("Boop Cheap Camelot Arbitrage Contract address: " + camelotContractAddress)
-    // get uniswap inputs
-    flashLoanBoopCheapCamelot.on("Balances", (wethBalance, boopBalance) => {
-      console.log("Balances event emitted:");
-      console.log("WETH Balance: ", wethBalance.toString());
-      console.log("BOOP Balance: ", boopBalance.toString());
-  });
+    
+    // Set up event listener
+    flashLoanBoopCheapCamelot.on("ArbitrageExecuted", (blockTime, profit) => {
+      console.log("ArbitrageExecuted event emitted:", blockTime, profit);
+    });
 
     // send WETH to camelot contract
     tx = await wethContract.connect(signer[0]).transfer(camelotContractAddress, flashloanDeposit)
