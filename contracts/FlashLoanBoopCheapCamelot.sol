@@ -233,7 +233,6 @@ contract FlashLoanBoopCheapCamelot is FlashLoanSimpleReceiverBase {
 
     // Deposit WETH buy BOOP on Camelot
     // approve weth
-    emit Balances(WETH.balanceOf(address(this)), BOOP.balanceOf(address(this)));
     WETH.approve(address(camelotRouterAddress), amount);
     require(amount > 0, "Amount must be greater than zero for WETH on Camelot");
     require(amount <= WETH.balanceOf(address(this)), "Insufficient WETH balance for Camelot swap");
@@ -251,7 +250,6 @@ contract FlashLoanBoopCheapCamelot is FlashLoanSimpleReceiverBase {
 
     // Deposit BOOP on Camelot and sell for WETH
     uint256 boopAmount = BOOP.balanceOf(address(this));
-    emit Balances(WETH.balanceOf(address(this)), BOOP.balanceOf(address(this)));
     // approve boop on camelot
     BOOP.approve(uniswapRouterAddress, boopAmount);
     require(boopAmount > 0, "BOOP amount must be greater than zero for uniswap swap");
@@ -273,7 +271,6 @@ contract FlashLoanBoopCheapCamelot is FlashLoanSimpleReceiverBase {
 
     // Ensure that the contract has enough WETH balance to cover the transfer
     require(_amountOutMinimumUniswap <= WETH.balanceOf(address(this)), "Insufficient WETH balance for Uniswap swap");
-    emit Balances(WETH.balanceOf(address(this)), BOOP.balanceOf(address(this)));
     // execute swap weth for boop on uniswap
     uint256 amountOut = uniswapSwapRouter.exactInputSingle(uniswapParams);
 
@@ -298,7 +295,6 @@ contract FlashLoanBoopCheapCamelot is FlashLoanSimpleReceiverBase {
     uint160 _sqrtPriceLimitX96Uniswap,
     uint256 _amountOutMinimumCamelot
     ) public {
-      emit Balances(WETH.balanceOf(address(this)), BOOP.balanceOf(address(this)));
     // declares that this address will recieve the loan
     address receiverAddress = address(this);
     // this is the address of the token
