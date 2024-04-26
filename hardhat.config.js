@@ -16,7 +16,7 @@ module.exports = {
         enabled: true,
         
       },
-      chainId: 42161, // Arbitrum One chain ID
+      chainId: 42161, // Arbitrum One chain ID,
     },
     arbitrum: {
       url: process.env.INFURA_ARBITRUM_ENDPOINT,
