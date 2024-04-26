@@ -12,15 +12,21 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.INFURA_ARBITRUM_ENDPOINT,
-        blockNumber: 202653649,
+        blockNumber: 202653650,
         enabled: true,
+        
       },
       chainId: 42161, // Arbitrum One chain ID
-    }
+    },
+    arbitrum: {
+      url: process.env.INFURA_ARBITRUM_ENDPOINT,
+      accounts: [process.env.DEV_BURNER_ACCOUNT0_PRIVATE_KEY],
+      chainId: 42161, // Arbitrum One chain ID
+    },
   },
   etherscan: {
     apiKey: {
-      sepolia: process.env.ETHERSCAN_API_KEY
+      sepolia: process.env.ETHERSCAN_API_KEY,
     }
   },
   sourcify: {
